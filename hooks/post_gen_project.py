@@ -13,6 +13,8 @@ if '{{ cookiecutter.copy_nbpages }}'.lower() == 'y':
     shutil.copytree(nbpages_sourcedir, nbpages_targetdir,
                     ignore=shutil.ignore_patterns('*.pyc', '.*', '__pycache__'))
 
-for nbdir in ('{{ cookiecutter.example_notebook }}', '{{ cookiecutter.example_subtopic }}'):
-    to_remove = os.path.join(os.path.realpath(os.path.curdir), nbdir)
-    shutil.rmtree(to_remove)
+
+if '{{ cookiecutter.skip_examples }}'.lower() == 'y':
+    for nbdir in ('{{ cookiecutter.example_notebook }}', '{{ cookiecutter.example_subtopic }}'):
+        to_remove = os.path.join(os.path.realpath(os.path.curdir), nbdir)
+        shutil.rmtree(to_remove)
