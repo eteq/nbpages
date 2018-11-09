@@ -160,6 +160,15 @@ class NBPagesConverter(object):
 
         if self.template_file:
             exporter.template_file = self.template_file
+
+        # a filter needed for the quasi-broken nbconvert templates (see the tpl
+        # file that uses it)
+        def striplines_filter(val, top_list_to_cut, bottom_list_to_cut):
+            lines = val.split('\n')
+            cutlines = lines[-top_list_to_cut:bottom_list_to_cut]
+            return '\n'.join(cutlines)
+        exporter.environment.filters['striplines'] = striplines_filter
+
         output, resources = exporter.from_filename(self._executed_nb_path,
                                                    resources=resources)
 
