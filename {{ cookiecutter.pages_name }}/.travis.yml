@@ -1,0 +1,32 @@
+language: python
+
+python:
+  - "3.6"
+
+jobs:
+  include:
+    - name: run/convert notebooks
+      script: python convert.py
+    - name: check notebooks
+      script: python -m "nbpages.check_nbs" --commit-range="${TRAVIS_COMMIT_RANGE/.../..}"  # see https://github.com/travis-ci/travis-ci/issues/4596 for why this bit in TRAVIS_COMMIT_RANGE is necessary
+    - stage: deploy
+      if: type != "pull_request" AND branch = "master"
+      script: python convert.py
+      deploy:
+        provider: pages
+        skip-cleanup: true
+        github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+        keep-history: true
+
+# install conda and create conda environment from file and activate
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then MINICONDA_OS=Linux; else MINICONDA_OS=MacOSX; fi
+  - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-$MINICONDA_OS-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda info
+  - conda config --set always_yes yes
+  - conda env create -f environment.yml
+  - conda activate notebooks_env
+  - conda env list

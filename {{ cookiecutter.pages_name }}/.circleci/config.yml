@@ -1,0 +1,84 @@
+version: 2.1
+
+executors:
+  notebook-executor:
+    docker:
+      - image: continuumio/miniconda3
+    working_directory: ~/repo
+
+jobs:
+  build:
+    executor: notebook-executor
+    environment:
+      - DEPLOY_BRANCH: gh-pages
+    steps:
+# must add a read/write deploy key to CircleCI for the repo for Gh pages deployment
+      - add_ssh_keys
+
+      - checkout
+
+      - restore_cache:
+          key: v1-miniconda-depends-{{ .Branch }}
+
+      - run:
+          name: Setup Environment
+          command: |
+            ./.circleci/setup_env.sh
+
+      - save_cache:
+          key: v1-miniconda-depends-{{ .Branch }}
+          paths:
+            - /opt/conda
+
+      - run:
+          name: Run/convert notebooks
+          command: |
+            conda info --envs
+            source activate notebooks_env
+            conda info --envs
+            python ./convert.py
+
+      - run:
+          name: Check notebooks
+          command: |
+            COMMIT_RANGE=$(echo "${CIRCLE_COMPARE_URL}" | cut -d/ -f7)
+            if [[ $COMMIT_RANGE != *"..."* ]]; then
+              COMMIT_RANGE="${COMMIT_RANGE}...${COMMIT_RANGE}"
+            fi
+            source activate notebooks_env
+            conda info --envs
+            python -m "nbpages.check_nbs" --commit-range=${COMMIT_RANGE}
+
+      # clone gh-pages branch, copy over files from build, commit and push
+      # export and sources are needed before script because CircleCI does not support
+      # interpolation when setting environment variables
+      # i.e. can't set environment vars to other environment vars (for use in script)
+      # see https://circleci.com/docs/2.0/env-vars/#setting-an-environment-variable-in-a-shell-command
+      - deploy:
+          name: Deploy
+          command: |
+            if [[ -z ${CIRCLE_PULL_REQUEST} ]]; then
+              echo "export WORKSPACE=${CIRCLE_WORKING_DIRECTORY}" >> $BASH_ENV
+              echo "export REPO_URL=${CIRCLE_REPOSITORY_URL}" >> $BASH_ENV
+              source $BASH_ENV
+              ./gh_pages_deploy.sh
+            else
+              echo "PR, not deploying..."
+              echo "${CIRCLE_PULL_REQUEST}"
+              echo "${CIRCLE_PULL_NUMBER}"
+            fi
+
+      - store_artifacts:
+          path: /out/notebooks
+
+
+workflows:
+  version: 2.1
+
+  build-deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - master
