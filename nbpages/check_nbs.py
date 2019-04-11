@@ -61,6 +61,7 @@ def main(max_commits_to_check_in_range=50, nb_path='.'):
     """
     Call this to programmatically use this as a command-line script
     """
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--commit-range', default=None, dest='range',
                         help='A range of git commits to check. Must be a valid'
