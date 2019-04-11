@@ -66,8 +66,7 @@ def main(max_commits_to_check_in_range=50):
                         help='A range of git commits to check. Must be a valid'
                              'argument for "git rev-list", and git must be '
                              'installed and accessible from the calling shell.')
-    parser.add_argument('--notebook_path', default=None, dest='nb_path',
-                        default='.')
+    parser.add_argument('--notebook_path', default='.', dest='nb_path')
     args = parser.parse_args()
 
     logging.basicConfig()
