@@ -57,7 +57,7 @@ def visit_content_nbs(nbpath, visitfunc):
     return success
 
 
-def main(max_commits_to_check_in_range=50, nb_path='jwst_validation_notebooks'):
+def main(max_commits_to_check_in_range=50):
     """
     Call this to programmatically use this as a command-line script
     """
