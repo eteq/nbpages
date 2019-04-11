@@ -57,7 +57,7 @@ def visit_content_nbs(nbpath, visitfunc):
     return success
 
 
-def main(max_commits_to_check_in_range=50):
+def main(max_commits_to_check_in_range=50, nb_path='.'):
     """
     Call this to programmatically use this as a command-line script
     """
@@ -71,7 +71,7 @@ def main(max_commits_to_check_in_range=50):
     logging.basicConfig()
     log.setLevel(logging.INFO)
     if args.range is None:
-        success = visit_content_nbs('.', execution_check)
+        success = visit_content_nbs(nb_path, execution_check)
     else:
         initial_branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()
         if initial_branch == 'HEAD':
@@ -95,7 +95,7 @@ def main(max_commits_to_check_in_range=50):
             for sha in shas:
                 log.info('Checking SHA "{}"'.format(sha))
                 subprocess.check_output('git checkout -q -f {}'.format(sha), shell=True)
-                if not visit_content_nbs('.', execution_check):
+                if not visit_content_nbs(nb_path, execution_check):
                     success = False
         finally:
             subprocess.check_output('git checkout ' + initial_branch, shell=True)
