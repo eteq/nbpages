@@ -46,7 +46,7 @@ def large_file_check(max_size=10):
 
     for line in output:
         if line.split('\t')[0][-1:] is 'M' and float(line.split('\t')[0][:-1]) > max_size:
-            log.error('Large Commited File {} Detected!'.format(line))
+            log.error('Large Commited File of {} Detected at {}!'.format(line.split()[0], line.split()[1]))
             success = False
 
     return success
@@ -124,7 +124,7 @@ def main(max_commits_to_check_in_range=50):
             if stash is not None:
                 subprocess.check_output('git stash pop', shell=True)
 
-    success = success and large_file_check(args.max_size)
+    success = success and large_file_check(int(args.max_size))
 
     if success:
         sys.exit(0)
