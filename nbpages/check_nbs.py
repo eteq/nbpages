@@ -33,6 +33,25 @@ def execution_check(name, full_path):
     return success
 
 
+def large_file_check(max_size=10):
+    """Checks for commited files larger than given size"""
+    success = True
+
+    git_root = subprocess.check_output('git rev-parse --show-toplevel', shell=True).decode().strip()
+
+    files = subprocess.check_output('git show --pretty=format: --name-only -r master', shell=True).decode().strip().split()
+    output = []
+    for file in [x for x in files if not x.split()[0].endswith((".png", ".ipynb"))]:
+        output.append(subprocess.check_output(f'du -h {git_root}/{file}', shell=True).decode().strip())
+
+    for line in output:
+        if line.split('\t')[0][-1:] is 'M' and float(line.split('\t')[0][:-1]) > max_size:
+            log.error('Large Commited File {} Detected!'.format(line))
+            success = False
+
+    return success
+
+
 def visit_content_nbs(nbpath, visitfunc):
     """
     Visits all the notebooks in the ``nbpath`` that are *not* "exec_*" or in
@@ -66,6 +85,9 @@ def main(max_commits_to_check_in_range=50):
                         help='A range of git commits to check. Must be a valid'
                              'argument for "git rev-list", and git must be '
                              'installed and accessible from the calling shell.')
+    parser.add_argument('--max_size', default=10, dest='max_size',
+                        help='Integer specifying max commited file size. '
+                        'Does not apply to notebook files.')
     args = parser.parse_args()
 
     logging.basicConfig()
@@ -101,6 +123,8 @@ def main(max_commits_to_check_in_range=50):
             subprocess.check_output('git checkout ' + initial_branch, shell=True)
             if stash is not None:
                 subprocess.check_output('git stash pop', shell=True)
+
+    success = success and large_file_check(args.max_size)
 
     if success:
         sys.exit(0)
