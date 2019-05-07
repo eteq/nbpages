@@ -46,7 +46,7 @@ def large_file_check(max_size=10):
 
     for line in output:
         if line.split('\t')[0][-1:] is 'M' and float(line.split('\t')[0][:-1]) > max_size:
-            log.error('Large Commited File of {} Detected at {}!'.format(line.split()[0], line.split()[1]))
+            log.error('Large Commited File of Detected - {}'.format(line))
             success = False
 
     return success
@@ -85,7 +85,7 @@ def main(max_commits_to_check_in_range=50):
                         help='A range of git commits to check. Must be a valid'
                              'argument for "git rev-list", and git must be '
                              'installed and accessible from the calling shell.')
-    parser.add_argument('--max_size', default=10, dest='max_size',
+    parser.add_argument('--max_size', default=10, type=int, dest='max_size',
                         help='Integer specifying max commited file size. '
                         'Does not apply to notebook files.')
     args = parser.parse_args()
@@ -124,7 +124,7 @@ def main(max_commits_to_check_in_range=50):
             if stash is not None:
                 subprocess.check_output('git stash pop', shell=True)
 
-    success = success and large_file_check(int(args.max_size))
+    success = success and large_file_check(args.max_size)
 
     if success:
         sys.exit(0)
