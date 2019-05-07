@@ -46,7 +46,7 @@ def large_file_check(max_size=10):
 
     for line in output:
         if line.split('\t')[0][-1:] is 'M' and float(line.split('\t')[0][:-1]) > max_size:
-            log.error('Large Commited File of Detected - {}'.format(line))
+            log.error('Large Commited File Detected - {}'.format(line))
             success = False
 
     return success
