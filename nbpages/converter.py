@@ -321,12 +321,14 @@ def clean_keyword(kw):
     return kw.strip().title().replace('.', '').replace('/', '').replace(' ', '')
 
 
-def get_changed():
+def get_changed(base_branch):
     '''
     Returns the names of new/changed notebooks on current commit.
     Returns .* if any global or .circleci/*  files were changed.
     Returns None if no files were changed on current commit.
     '''
+    if not base_branch:
+        base_branch = 'master'
 
     # List of any files that when changed should convert all notebooks
     global_files = ['convert.py', 'environment.yml', 'index.tpl',
@@ -418,9 +420,10 @@ def make_parser(parser=None):
                              'include. Cannot be given at the same time as '
                              'exclude.')
 
-    parser.add_argument('--changed', default=None, action="store_true", dest='changed',
-                        help='Signals a check/conversion for only changed files.'
-                             'Only converts changed notebook files.')
+    parser.add_argument('--changed', default=None, dest='changed',
+                        help='Signals a check for changed files'
+                             ' on current commit from the specified branch.'
+                             'Only converts impacted notebooks.')
 
     parser.add_argument('--report', default=None, dest='report_file',
                         help='The path and file name to write a Junit XML '
@@ -459,7 +462,7 @@ def run_parsed(nbfile_or_path, output_type, args, **kwargs):
     if args.changed:
         if args.include is not None:
             raise ValueError("cannot give an explicit include list and ask for only changed notebooks at the same time")
-        args.include = get_changed()
+        args.include = get_changed(args.changed)
         if args.include is None:
             args.exclude = '.*'
         else:
