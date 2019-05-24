@@ -333,7 +333,7 @@ def get_changed():
                     'nb_html.tpl', 'pages.css', 'gh_pages_deploy.sh']
 
     # This command will list all changed files on current commit from master.
-    list_changed_files_cmd = "git show --pretty=format: --name-only -r master"
+    list_changed_files_cmd = "git show --pretty=format: --name-only -r {}".format(base_branch)
 
     # Get list of changed files using git
     # git must be installed and accessible from the calling shell
@@ -457,6 +457,8 @@ def run_parsed(nbfile_or_path, output_type, args, **kwargs):
                       .format(template_file))
 
     if args.changed:
+        if args.include is not None:
+            raise ValueError("cannot give an explicit include list and ask for only changed notebooks at the same time")
         args.include = get_changed()
         if args.include is None:
             args.exclude = '.*'
