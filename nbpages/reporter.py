@@ -22,7 +22,6 @@ class Reporter(object):
     def _junit_xml_import(self):
         """
         Imports junit_xml which is required to format reports for use in CI.
-
         Returns True if import succeeded, False otherwise
         """
         try:
@@ -32,6 +31,7 @@ class Reporter(object):
         except ImportError:
             warn('Failed to import junit_xml, required to create junit-style report.')
             return False
+
 
     @staticmethod
     def format_error(e):
@@ -96,13 +96,13 @@ class Reporter(object):
         activated.)
         """
         if self.activated:
-            if '.xml'.casefold() not in report_file.casefold():
-                report_file = report_file.split('.')[0] + '.xml'
-
             ts = [TestSuite(suite_name, self.test_cases, package=suite_package)]
 
             xmls = TestSuite.to_xml_string(ts, prettyprint=True)
             if report_file:
+                if '.xml'.casefold() not in report_file.casefold():
+                    report_file = report_file.split('.')[0] + '.xml'
+
                 if hasattr(report_file, 'write'):
                     # assume file-like
                     report_file.write(xmls)
