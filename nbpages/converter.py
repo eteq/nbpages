@@ -342,6 +342,12 @@ def get_changed(base_branch):
     changed_files = subprocess.check_output(list_changed_files_cmd,
                                     shell=True).decode().strip().split('\n')
 
+
+
+    non_global = ('.ipynb', '.md', '.rst')
+
+    global_changed_files = [f for f in file_names if not  os.path.basename(f).endswith(non_global)]
+
     # Determine if global file was changed
     global_change = any(f in [path.basename(x) for x in changed_files]
             for f in global_files) or '.circleci' in [path.dirname(x)
