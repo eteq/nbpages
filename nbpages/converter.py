@@ -6,6 +6,7 @@ import time
 import logging
 import warnings
 import argparse
+import subprocess
 from urllib import request
 
 from nbconvert.preprocessors import ExecutePreprocessor, CellExecutionError
@@ -331,6 +332,56 @@ def clean_keyword(kw):
     return kw.strip().title().replace('.', '').replace('/', '').replace(' ', '')
 
 
+def get_changed(base_branch):
+    '''
+    Returns the names of new/changed notebooks on current commit.
+    Returns .* if any global or .circleci/*  files were changed.
+    Returns None if no files were changed on current commit.
+    '''
+    if not base_branch:
+        base_branch = 'master'
+
+    # List of any files that when changed should convert all notebooks
+    global_files = ['convert.py', 'environment.yml', 'index.tpl',
+                    'nb_html.tpl', 'pages.css', 'gh_pages_deploy.sh']
+
+    # This command will list all changed files on current commit from master.
+    list_changed_files_cmd = "git show --pretty=format: --name-only -r {}".format(base_branch)
+
+    # Get list of changed files using git
+    # git must be installed and accessible from the calling shell
+    changed_files = subprocess.check_output(list_changed_files_cmd,
+                                    shell=True).decode().strip().split('\n')
+
+
+
+    non_global = ('.ipynb', '.md', '.rst')
+
+    global_changed_files = [f for f in file_names if not  os.path.basename(f).endswith(non_global)]
+
+    # Determine if global file was changed
+    global_change = any(f in [path.basename(x) for x in changed_files]
+            for f in global_files) or '.circleci' in [path.dirname(x)
+                for x in changed_files]
+
+    # If global changed, return string for checking all
+    if global_change:
+        logger.info('Global change, converting all.')
+        return ".*"
+    else:
+        to_include = set()
+        for f in [x for x in changed_files if 'notebooks' in path.dirname(x)]:
+            to_include.add(path.basename(path.dirname(f)))
+
+        # If there are new/changed notebooks, return them
+        if to_include:
+            logger.info('Converting only {} notebooks'.format(','.join(to_include)))
+            return ','.join(to_include)
+
+    # No changed notebooks or global files
+    return None
+
+
 def make_parser(parser=None):
     """
     Generate an `argparse.ArgumentParser` for nbpages
@@ -386,6 +437,11 @@ def make_parser(parser=None):
                              'include. Cannot be given at the same time as '
                              'exclude.')
 
+    parser.add_argument('--changed', default=None, dest='changed',
+                        help='Signals a check for changed files'
+                             ' on current commit from the specified branch.'
+                             'Only converts impacted notebooks.')
+
     parser.add_argument('--report', default=None, dest='report_file',
                         help='The path and file name to write a Junit XML '
                              'report to. Extension will always be .xml')
@@ -420,17 +476,30 @@ def run_parsed(nbfile_or_path, output_type, args, **kwargs):
         raise IOError("Couldn't find template file at {0}"
                       .format(template_file))
 
+    if args.changed:
+        if args.include is not None:
+            raise ValueError("cannot give an explicit include list and ask for only changed notebooks at the same time")
+        args.include = get_changed(args.changed)
+        if args.include is None:
+            args.exclude = '.*'
+        else:
+            args.exclude = None
+
     if args.exclude is None:
         exclude_list = []
     else:
         exclude_list = [ex if ex.startswith('.*') else '.*?' + ex
                         for ex in args.exclude.split(',')]
 
+    print("exclude_list: {}".format(exclude_list))
+
     if args.include is None:
         include_list = []
     else:
         include_list = [inc if inc.startswith('.*') else '.*?' + inc
                         for inc in args.include.split(',')]
+
+    print("include_list: {}".format(include_list))
 
     return process_notebooks(nbfile_or_path, exec_only=args.exec_only,
                       output_path=output_path, template_file=template_file,

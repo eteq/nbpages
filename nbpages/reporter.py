@@ -96,13 +96,13 @@ class Reporter(object):
         activated.)
         """
         if self.activated:
-            if '.xml'.casefold() not in report_file.casefold():
-                report_file = report_file.split('.')[0] + '.xml'
-
             ts = [TestSuite(suite_name, self.test_cases, package=suite_package)]
 
             xmls = TestSuite.to_xml_string(ts, prettyprint=True)
             if report_file:
+                if '.xml'.casefold() not in report_file.casefold():
+                    report_file = report_file.split('.')[0] + '.xml'
+
                 if hasattr(report_file, 'write'):
                     # assume file-like
                     report_file.write(xmls)
