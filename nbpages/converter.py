@@ -281,6 +281,8 @@ def process_notebooks(nbfile_or_path, exec_only=False, exclude=[], include=[],
         # notebook files
         if 'reporter' not in kwargs:
             kwargs['reporter'] = Reporter()
+
+        notebook_filepaths = []
         for root, dirs, files in walk(nbfile_or_path):
             for name in files:
                 _, ext = path.splitext(name)
@@ -300,11 +302,13 @@ def process_notebooks(nbfile_or_path, exec_only=False, exclude=[], include=[],
                         logger.info("Skipping {} because it is not in the include list".format(full_path))
                         continue
 
-                    nbc = NBPagesConverter(full_path, **kwargs)
-                    nbc.execute()
+                    notebook_filepaths.append([full_path, kwargs.copy(), exec_only])
 
-                    if not exec_only:
-                        converted.append(nbc.convert())
+        for filepath, kwargs, exec_only in sorted(notebook_filepaths, key=lambda details: details[0]):
+            nbc = NBPagesConverter(filepath, **kwargs)
+            nbc.execute()
+            if not exec_only:
+                converted.append(nbc.convert())
 
     else:
         # It's a single file, so convert it
