@@ -38,16 +38,20 @@ def make_html_index(converted_files, html_template, outfn='index.html',
     if relpaths:
         outdir = os.path.realpath(os.path.dirname(outfn) if outfn else os.path.curdir)
 
-        if isinstance(converted_files[0], str):
-            converted_file_paths = [os.path.relpath(os.path.realpath(page), outdir)
-                               for page in converted_files]
-            converted_file_dicts = [dict(output_file_path=os.path.relpath(os.path.realpath(page), outdir), name=page, title=page)
-                               for page in converted_files]
-        else:
-            converted_file_paths = [os.path.relpath(os.path.realpath(page['output_file_path']), outdir)
-                               for page in converted_files]
-            converted_file_dicts = [dict(output_file_path=os.path.relpath(os.path.realpath(page['output_file_path']), outdir), name=page['name'], title=page['title'])
-                               for page in converted_files]
+        converted_file_paths, converted_file_dicts = [], []
+        for page in converted_files:
+
+            if isinstance(page, str):
+                converted_file_paths.append(os.path.relpath(os.path.realpath(page), outdir))
+                converted_file_dicts.append(dict(output_file_path=os.path.relpath(os.path.realpath(page), outdir), 
+                                                 name=page, 
+                                                 title=page))
+            elif isinstance(page, dict):
+                converted_file_paths.append(os.path.relpath(os.path.realpath(page['output_file_path']), outdir))
+                converted_file_dicts.append(dict(output_file_path=os.path.relpath(os.path.realpath(page['output_file_path']), outdir), 
+                                                 name=page['name'], 
+                                                 title=page['title']))
+                               
     else:
         if isinstance(converted_files[0], str):
             converted_file_paths = converted_files
